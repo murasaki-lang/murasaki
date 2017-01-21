@@ -189,3 +189,18 @@ struct MRSK_Interpreter_tag {
     StatementList *statement_list;
     int current_line_number;
 };
+
+typedef enum {
+    NORMAL_STATEMENT_RESULT = 1,
+    RETURN_STATEMENT_RESULT,
+    BREAK_STATEMENT_RESULT,
+    CONTINUE_STATEMENT_RESULT,
+    STATEMENT_RESULT_TYPE_COUNT_PLUS_1
+} StatementResultType;
+
+typedef struct {
+    StatementResultType type;
+    union {
+        MRSI_Value return_value;
+    } u;
+} StatementResult;
