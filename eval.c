@@ -169,7 +169,7 @@ static void eval_binary_int(MRSK_Interpreter *inter, ExpressionType operator,
                             int left, int right, MRSK_Value *result,
                             int line_number)
 {
-    if (dkb_is_mathc_operator(operator)) {
+    if (dkb_is_math_operator(operator)) {
         result->type = MRSK_INT_VALUE;
     } else if (dkc_is_compare_operator(operator)) {
         result->type = MRSK_BOOLEAN_VALUE;
@@ -234,44 +234,44 @@ static void eval_binary_double(MRSK_Interpreter *inter, ExpressionType operator,
     }
 
     switch (operator) {
-    case BOOLEAN_EXPRESSION:
-    case INT_EXPRESSION:
-    case DOUBLE_EXPRESSION:
-    case STRING_EXPRESSION:
-    case IDENTIFIER_EXPRESSION:
-    case ASSIGN_EXPRESSION:
-        DBG_panic(("bad case...%d", operator)); break;
-    case ADD_EXPRESSION:
-        result->u.double_value = left + right; break;
-    case SUB_EXPRESSION:
-        result->u.double_value = left - right; break;
-    case MUL_EXPRESSION:
-        result->u.double_value = left * right; break;
-    case DIV_EXPRESSION:
-        result->u.double_value = left / right; break;
-    case MOD_EXPRESSION:
-        result->u.double_value = fmod(left, right); break;
-    case LOGICAL_AND_EXPRESSION:
-    case LOGICAL_OR_EXPRESSION:
-        DBG_panic(("bad case...%d", operator)); break;
-    case EQ_EXPRESSION:
-        result->u.int_value = left == right; break;
-    case NE_EXPRESSION:
-        result->u.int_value = left != right; break;
-    case GT_EXPRESSION:
-        result->u.int_value = left > right; break;
-    case GE_EXPRESSION:
-        result->u.int_value = left >= right; break;
-    case LT_EXPRESSION:
-        result->u.int_value = left < right; break;
-    case LE_EXPRESSION:
-        result->u.int_value = left <= right; break;
-    case MINUS_EXPRESSION:
-    case FUNCTION_CALL_EXPRESSION:
-    case NULL_EXPRESSION:
-    case EXPRESSION_TYPE_COUNT_PLUS_1:
-    default:
-        DBG_panic(("bad default...%d", operator));
+        case BOOLEAN_EXPRESSION:
+        case INT_EXPRESSION:
+        case DOUBLE_EXPRESSION:
+        case STRING_EXPRESSION:
+        case IDENTIFIER_EXPRESSION:
+        case ASSIGN_EXPRESSION:
+            DBG_panic(("bad case...%d", operator)); break;
+        case ADD_EXPRESSION:
+            result->u.double_value = left + right; break;
+        case SUB_EXPRESSION:
+            result->u.double_value = left - right; break;
+        case MUL_EXPRESSION:
+            result->u.double_value = left * right; break;
+        case DIV_EXPRESSION:
+            result->u.double_value = left / right; break;
+        case MOD_EXPRESSION:
+            result->u.double_value = fmod(left, right); break;
+        case LOGICAL_AND_EXPRESSION:
+        case LOGICAL_OR_EXPRESSION:
+            DBG_panic(("bad case...%d", operator)); break;
+        case EQ_EXPRESSION:
+            result->u.int_value = left == right; break;
+        case NE_EXPRESSION:
+            result->u.int_value = left != right; break;
+        case GT_EXPRESSION:
+            result->u.int_value = left > right; break;
+        case GE_EXPRESSION:
+            result->u.int_value = left >= right; break;
+        case LT_EXPRESSION:
+            result->u.int_value = left < right; break;
+        case LE_EXPRESSION:
+            result->u.int_value = left <= right; break;
+        case MINUS_EXPRESSION:
+        case FUNCTION_CALL_EXPRESSION:
+        case NULL_EXPRESSION:
+        case EXPRESSION_TYPE_COUNT_PLUS_1:
+        default:
+            DBG_panic(("bad default...%d", operator));
     }
 }
 
@@ -318,7 +318,7 @@ MRSK_STRING * chain_string(MRSK_Interpreter *inter, MRSK_String *left, MRSK_Stri
     str = MEM_malloc(len+1);
     strcpy(str, left->string);
     strcat(str, right->string);
-    ret = mrsk_create_crowbar_string(inter, str);
+    ret = mrsk_create_murasaki_string(inter, str);
     mrsk_release_string(left);
     mrsk_release_string(right);
 
@@ -409,4 +409,266 @@ MRSK_Value mrsk_eval_binary_expression(MRSK_Interpreter *inter,
                            MESSAGE_ARGUMENT_END);
     }
     return result;
+}
+
+
+static MRSK_Value eval_logical_and_or_expression(MRSK_Interpreter *inter,
+                                                 LocalEnvironment *env,
+                                                 ExpressionType operator,
+                                                 Expression *left,
+                                                 Expression *right)
+{
+    MRSK_Value left_val;
+    MRSK_Value right_val;
+    MRSK_Value result;
+
+    result.type = MRSK_BOOLEAN_VALUE;
+    left_val = eval_expression(inter, env, left);
+
+    if (left_val.type != MRSK_BOOLEAN_VALUE) {
+        mrsk_runtime_error(left->line_number, NOT_BOOLEAN_TYPE_ERR,
+                          MESSAGE_ARGUMENT_END);
+    }
+    if (operator == LOGICAL_AND_EXPRESSION) {
+        if (!left_val.u.boolean_value) {
+            result.u.boolean_value = MRSK_FALSE;
+            return result;
+        }
+    } else if (operator == LOGICAL_OR_EXPRESSION) {
+        if (left_val.u.boolean_value) {
+            result.u.boolean_value = MRSK_TRUE;
+            return result;
+        }
+    } else {
+        DBG_panic(("bad operator..%d\n", operator));
+    }
+
+    right_val = eval_expression(inter, env, right);
+    if (right_val.type != MRSK_BOOLEAN_VALUE) {
+        mrsk_runtime_error(right->line_number, NOT_BOOLEAN_TYPE_ERR,
+                          MESSAGE_ARGUMENT_END);
+    }
+    result.u.boolean_value = right_val.u.boolean_value;
+
+    return result;
+}
+
+
+MRSK_Value mrsk_eval_minus_expression(MRSK_Interpreter *inter,
+                                      LocalEnvironment *env,
+                                      Expression *operand)
+{
+    MRSK_Value operand_val;
+    MRSK_Value result;
+
+    operand_val = eval_expression(inter, env, operand);
+    if (operand_val.type == MRSK_INT_VALUE) {
+        result.type = MRSK_INT_VALUE;
+        result.u.int_value = -operand_val.u.int_value;
+    } else if (operand_val.type == MRSK_DOUBLE_VALUE) {
+        result.type = MRSK_DOUBLE_VALUE;
+        result.u.double_value = -operand_val.u.double_value;
+    } else {
+        mrsk_runtime_error(operand->line_number, MINUS_OPERAND_TYPE_ERR,
+                          MESSAGE_ARGUMENT_END);
+    }
+    return result;
+}
+
+static LocalEnvironment * alloc_local_environment()
+{
+    LocalEnvironment *ret;
+
+    ret = MEM_malloc(sizeof(LocalEnvironment));
+    ret->variable = NULL;
+    ret->global_variable = NULL;
+
+    return ret;
+}
+
+static void dispose_local_environment(MRSK_Interpreter *inter,
+                                      LocalEnvironment *env)
+{
+    while (env->variable) {
+        Variable *temp;
+        temp = env->variable;
+        if (env->variable->value.type == MRSK_STRING_VALUE) {
+            mrsk_release_string(env->variable->value.u.string_value);
+        }
+        env->variable = temp->next;
+        MEM_free(temp);
+    }
+    while (env->global_variable) {
+        GlobalVariableRef *ref;
+        ref = env->global_variable;
+        env->global_variable = ref->next;
+        MEM_free(ref);
+    }
+
+    MEM_free(env);
+}
+
+static MRSK_Value call_native_function(MRSK_Interpreter *inter,
+                                       LocalEnvironment *env,
+                                       Expression *expr,
+                                       MRSK_NativeFunctionProc *proc)
+{
+    MRSK_Value value;
+    int arg_count;
+    ArgumentList *arg_p;
+    MRSK_Value *args;
+    int i;
+
+    for (arg_count=0, arg_p=expr->u.function_call_expression.argument;
+         arg_p; arg_p=arg_p->next) {
+        arg_count++;
+    }
+
+    args = MEM_malloc(sizeof(MRSK_Value) * arg_count);
+
+    for (arg_p=expr->u.function_call_expression.argument, i=0;
+         arg_p; arg_p=arg_p->next, i++) {
+        args[i] = eval_expression(inter, env, arg_p->expression);
+    }
+    value = proc(inter, arg_count, args);
+    for (i=0; i<arg_count; i++) {
+        release_if_string(&args[i]);
+    }
+    MEM_free(args);
+
+    return value;
+}
+
+static MRSK_Value call_murasaki_function(MRSK_Interpreter *inter,
+                                         LocalEnvironment *env,
+                                         Expression *expr,
+                                         FunctionDefinition *func)
+{
+    MRSK_Value value;
+    StatementResult result;
+    ArgumentList *arg_p;
+    ParameterList *param_p;
+    LocalEnvironment *local_env;
+
+    local_env = alloc_local_environment();
+
+    for (arg_p=expr->u.function_call_expression.argument,
+         param_p=func->u.murasaki_f.parameter;
+         arg_p; arg_p=arg_p->next, param_p=param_p->next) {
+
+        MRSK_Value arg_val;
+
+        if (param_p == NULL) {
+            mrsk_runtime_error(expr->line_number, ARGUMENT_TOO_MANY_ERR,
+                               MESSAGE_ARGUMENT_END);
+        }
+        arg_val = eval_expression(inter, env, arg_p->expression);
+        mrsk_add_local_variable(local_env, param_p->name, &arg_val);
+    }
+    if (param_p) {
+        mrsk_runtime_error(expr->line_number, ARGUMENT_TOO_FEW_ERR,
+                           MESSAGE_ARGUMENT_END);
+    }
+    result = mrsk_execute_statement_list(inter, local_env,
+                                         func->u.murasaki_f.block
+                                         ->statement_list);
+    if (result.type == RETURN_STATEMENT_RESULT) {
+        value = result.u.return_value;
+    } else {
+        value.type = MRSK_NULL_VALUE;
+    }
+    dispose_local_environment(inter, local_env);
+
+    return value;
+}
+
+static MRSK_Value eval_function_call_expression(MRSK_Interpreter *inter,
+                                                LocalEnvironment *env,
+                                                Expression *expr)
+{
+    MRSK_Value value;
+    FunctionDefinition *func;
+
+    char *identifier = expr->u.function_call_expression.identifier;
+
+    func = mrsk_search_function(identifier);
+    if (func == NULL) {
+        mrsk_runtime_error(expr->line_number, FUNCTION_NOT_FOUND_ERR,
+                           STRING_MESSAGE_ARGUMENT, "name", identifier,
+                           MESSAGE_ARGUMENT_END);
+    }
+    switch (func->type) {
+        case MURASAKI_FUNCTION_DEFINITION:
+            value = call_murasaki_function(inter, env, expr, func); break;
+        case NATIVE_FUNCTION_DEFINITION:
+            value = call_native_function(inter, env, expr,
+                                         func->u.native_f.proc); break;
+        default:
+            DBG_panic(("bad case..%d\n", func->type));
+    }
+
+    return value;
+}
+
+static MRSK_Value eval_expression(MRSK_Interpreter *inter,
+                                  LocalEnvironment *env,
+                                  Expression *expr)
+{
+    MRSK_Value v;
+    switch (expr->type) {
+        case BOOLEAN_EXPRESSION:
+            v = eval_boolean_expression(expr->u.boolean_value); break;
+        case INT_EXPRESSION:
+            v = eval_int_expression(expr->u.int_value); break;
+        case DOUBLE_EXPRESSION:
+            v = eval_double_expression(expr->u.double_value); break;
+        case STRING_EXPRESSION:
+            v = eval_string_expression(inter, expr->u.string_value); break;
+        case IDENTIFIER_EXPRESSION:
+            v = eval_identifier_expression(inter, env, expr); break;
+        case ASSIGN_EXPRESSION:
+            v = eval_assign_expression(inter, env,
+                                       expr->u.assign_expression.variable,
+                                       expr->u.assign_expression.operand);
+            break;
+        case ADD_EXPRESSION:
+        case SUB_EXPRESSION:
+        case MUL_EXPRESSION:
+        case DIV_EXPRESSION:
+        case MOD_EXPRESSION:
+        case EQ_EXPRESSION:
+        case NE_EXPRESSION:
+        case GT_EXPRESSION:
+        case GE_EXPRESSION:
+        case LT_EXPRESSION:
+        case LE_EXPRESSION:
+            v = mrsk_eval_binary_expression(inter, env, expr->type,
+                                           expr->u.binary_expression.left,
+                                           expr->u.binary_expression.right);
+            break;
+        case LOGICAL_AND_EXPRESSION:
+        case LOGICAL_OR_EXPRESSION:
+            v = eval_logical_and_or_expression(inter, env, expr->type,
+                                               expr->u.binary_expression.left,
+                                               expr->u.binary_expression.right);
+            break;
+        case MINUS_EXPRESSION:
+            v = mrsk_eval_minus_expression(inter, env, expr->u.minus_expression);
+            break;
+        case FUNCTION_CALL_EXPRESSION:
+            v = eval_function_call_expression(inter, env, expr); break;
+        case NONE_EXPRESSION:
+            v = eval_null_expression(); break;
+        case EXPRESSION_TYPE_COUNT_PLUS_1:
+        default:
+            DBG_panic(("bad case. type..%d\n", expr->type));
+    }
+    return v;
+}
+
+MRSK_Value mrsk_eval_expression(MRSK_Interpreter *inter,
+                                LocalEnvironment *env,
+                                Expression *expr)
+{
+    return eval_expression(inter, env, expr);
 }
