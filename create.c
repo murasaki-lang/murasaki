@@ -126,6 +126,36 @@ Expression * mrsk_alloc_expression(ExpressionType type)
     return exp;
 }
 
+Expression * mrsk_create_assign_expression(Expression *left, Expression *operand)
+{
+    Expresssion *exp;
+
+    exp = mrsk_alloc_expression(ASSIGN_EXPRESSION);
+    exp->u.assign_expression.left = left;
+    exp->u.assign_expression.operand = operand;
+
+    return exp;
+}
+
+static Expression convert_value_to_expression(MRSK_Value *v)
+{
+    Expression expr;
+
+    if (v->type == MRSK_INT_VALUE) {
+        expr.type == INT_EXPRESSION;
+        expr.u.int_value = v->u.int_value;
+    } else if (v->type == MRSK_DOUBLE_VALUE) {
+        expr.type == DOUBLE_EXPRESSION;
+        expr.u.double_value = v->u.double_value;
+    } else {
+        DBG_assert(v->type==MRSK_BOOLEAN_VALUE,
+                   ("v->type..%d\n", v->type));
+        expr.type = BOOLEAN_EXPRESSION;
+        expr.u.boolean_value = v->u.boolean_value;
+    }
+    return expr;
+}
+
 Expression * mrsk_create_binary_expresssion(ExpressionType operator,
                                             Expression *left, Expression *right)
 {
@@ -160,4 +190,234 @@ Expression * mrsk_create_minus_expression(Expression *operand)
         exp->u.minus_expression = operand;
         return exp;
     }
+}
+
+Expression * mrsk_create_index_expression(Expression *array, Expression *index)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(INDEX_EXPRESSION);
+    exp->u.index_expression.array = array;
+    exp->u.index_expression.index = index;
+
+    return exp;
+}
+
+Expression * mrsk_create_incdec_expression(Expression *operand, ExpressionType inc_or_dec)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(inc_or_dec);
+    exp->u.inc_dec.operand = operand;
+
+    return expt;
+}
+
+Expression * mrsk_create_identifier_expression(char *identifier)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(IDENTIFIER_EXPRESSION);
+    exp->u.identifier = identifier;
+
+    return exp;
+}
+
+Expression * mrsk_create_function_call_expression(char *func_name, ArgumentList *argument)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(FUNCTION_CALL_EXPRESSION);
+    exp->u.function_call_expression.identifier = func_name;
+    exp->u.function_call_expression.argument = argument;
+
+    return exp;
+}
+
+Expression * mrsk_create_method_call_expression(Expression *expression,
+                                                char *method_name, ArgumentList *argument)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(METHOD_CALL_EXPRESSION);
+    exp->u.method_call_expression.expression = expression;
+    exp->u.method_call_expression.identifier = method_name;
+    exp->u.method_call_expression.argument = arugment;
+
+    return exp;
+}
+
+Expression * mrsk_create_boolean_expression(MRSK_Boolean value)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(BOOLEAN_EXPRESSION);
+    exp->u.boolean_value = value;
+
+    return exp;
+}
+
+Expression * mrsk_create_none_expression(void)
+{
+    Expression *exp;
+    exp = mrsk_alloc_expression(NONE_EXPRESSION);
+
+    return exp;
+}
+
+Expression * mrsk_create_array_expression(ExpressionList *list)
+{
+    Expression *exp;
+
+    exp = mrsk_alloc_expression(ARRAY_EXPRESSION);
+    exp->u.array_literal = list;
+
+    return exp;
+}
+
+static Statement * alloc_statement(StatementType type)
+{
+    statement *st;
+
+    st = mrsk_malloc(sizeof(Statement));
+    st->type = type;
+    st->line_number = mrsk_get_current_interpreter()->cuttent_line_number;
+
+    return st;
+}
+
+Statement * mrsk_create_global_statement(IdentifierList *identifier_list)
+{
+    Statement *st;
+
+    st = alloc_statement(GLOBAL_STATEMENT);
+    st->u.global_s.identifier_list = identifier_list;
+
+    return st;
+}
+
+IdentifierList * mrsk_create_global_identifier(char *identifier)
+{
+    IdentifierList *i_list;
+
+    i_list = mrsk_malloc(sizeof(IdentifierList));
+    i_list->name = identifier;
+    i_list->next = NULL;
+
+    return i_list;
+
+}
+
+IdentifierList * mrsk_chain_identifier(IdentifierList *list, char *identifier)
+{
+    IdentifierList *pos;
+
+    for (pos=list; pos->next; pos=pos->next) ;
+
+    pos->next = mrsk_create_global_identifier(identifier);
+
+    return list;
+}
+
+Statement * mrsk_create_if_statement(Expression *condition,
+                                     Block *then_block, Elif *elif_list,
+                                     Block *else_block)
+{
+    Statement *st;
+
+    st = alloc_statement(IF_STATEMENT);
+    st->u.if_s.condition = condition;
+    st->u.fi_s.then_block = then_block;
+    st->u.if_s.elif_list = elif_list;
+    st->u.if_s.else_block = else_block;
+
+    return st;
+}
+
+Elif * mrsk_chain_elif_list*Elif *list, Elif *add)
+{
+    Elif *pos;
+
+    for (pos=list; pos->next; pos=pos->next) ;
+
+    pos->next = add;
+
+    return list;
+}
+
+Elif * mrsk_chain_elif_list(Elif *list, Elif *add)
+{
+    Elif *ei;
+
+    ei = mrsk_malloc(sizeof(Elif));
+    ei->condition = expr;
+    ei->block = block;
+    ei->next = NULL;
+
+    return ei;
+}
+
+Statement * mrsk_create_while_statement(Expression *condition, Block *block)
+{
+    Statement *st;
+
+    st = alloc_statement(WHILE_STATEMENT);
+    st->u.while_s.condition = condtion;
+    st->u.while_s.block = block;
+
+    return st;
+}
+
+Statement * mrsk_create_for_statement(Expression *init, Expression *cond,
+                                      Expression *post, Block *block)
+{
+    Statement *st;
+
+    st = alloc_statement(FOR_STATEMENT);
+    st->u.for_s.init = init;
+    st->u.for_s.condition = cond;
+    st->u.for_s.post = pos;
+    st->u.for_s.block = block;
+
+    return st;
+}
+
+Block * mrsk_create_block(StatementList *statement_list)
+{
+    Block *block;
+
+    block = mrsk_malloc(sizeof(Block));
+    block->statement_list = statement_list;
+
+    return block;
+}
+
+Statement * mrsk_create_expression_statement(Expression *expression)
+{
+    Statement *st;
+
+    st = alloc_statement(EXPRESSION_STATEMENT);
+    st->u.expression_s = expression;
+
+    return st;
+}
+
+Statement * mrsk_create_return_statement(Expression *expression)
+{
+    Statement *st;
+
+    st = alloc_statement(RETUREN_STATEMENT);
+    st->u.return_s.return_value = expression;
+
+    return st;
+}
+
+Statement * mrsk_create_break_statement(void)
+{
+    return alloc_statement(BREAK_STATEMENT);
+}
+
+Statement * mrsk_create_continue_statement(void)
+{
+    return alloc_statement(CONTINUE_STATEMENT);
 }
