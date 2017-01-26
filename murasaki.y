@@ -169,10 +169,33 @@ multiplicative_expression
     }
     ;
 unary_expression
-    : primary_expression
+    : postfix_expression
     | SUB unary_expression
     {
         $$ = mrsk_create_minus_expression($2);
+    }
+    ;
+postfix_expression
+    : primary_expression
+    | postfix_expression LB expression RB
+    {
+        $$ = mrsk_create_index_expression($1, $3);
+    }
+    | postfix_expression DOT IDENTIFIER LP argument_list RP
+    {
+        $$ = mrsk_create_method_call_expression($1, $3, $5);
+    }
+    | postfix_expression DOT IDENTIFIER LP RP
+    {
+        $$ = mrsk_create_method_call_expression($1, $3, NULL);
+    }
+    | postfix_expression INCREMENT
+    {
+        $$ = mrsk_create_incdec_expression($1, INCREMENT_EXPRESSION);
+    }
+    | postfix_expression DECREMENT
+    {
+        $$ = mrsk_create_incdec_expression($1, DECREMENT_EXPRESSION);
     }
     ;
 primary_expression
