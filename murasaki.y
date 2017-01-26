@@ -199,11 +199,11 @@ postfix_expression
     }
     ;
 primary_expression
-    : IDENTIFIER LPO argument_lsit RP
+    : IDENTIFIER LP argument_list RP
     {
         $$ = mrsk_create_function_call_expression($1, $3);
     }
-    | IDENTIFIER LOP RP
+    | IDENTIFIER LP RP
     {
         $$ = mrsk_create_function_call_expression($1, NULL);
     }
@@ -229,6 +229,31 @@ primary_expression
     | NONE_T
     {
         $$ = mrsk_create_none_expression();
+    }
+    | array_literal
+    ;
+array_literal
+    : LC expression_list RC
+    {
+        $$ = mrsk_create_array_expression($2);
+    }
+    | LC expression_list COMMA RC
+    {
+        $$ = mrsk_create_array_expression($2);
+    }
+    ;
+expression_list
+    :
+    {
+        $$ = NULL;
+    }
+    | expression
+    {
+        $$ = mrsk_create_expression_list($1);
+    }
+    | expression COMMA expression
+    {
+        $$ = mrsk_chain_expression_list($1, $3);
     }
     ;
 statement
