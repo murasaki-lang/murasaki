@@ -8,6 +8,7 @@
     ParameterList *parameter_list;
     ArgumentList *argument_list;
     Expression *expression;
+    ExpressionList *expression_list;
     Statement *statement;
     StatementList *statement_list;
     Block *block;
@@ -20,14 +21,16 @@
 %token <identifier> IDENTIFIER
 %token FUNCTION IF ELIF ELSE WHILE FOR RETURN_T BREAK CONTINUE NONE_T
        LP RP LC RC SEMICOLON COMMA ASSIGN LOGICAL_AND LOGICAL_OR
-       EQ NE GT GE LT LE ADD SUB MUL DIB MOD TRUE_T FALSE_T GLOBAL_T
+       EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T GLOBAL_T
+       DOT INCREMENT DECREMENT
 %type <parameter_list> parameter_list
 %type <argument_list> argument_list
 %type <expression> expression expression_opt
       logical_and_expression logical_or_expression
       equality_expression relational_expression
       additive_expression multiplicative_expression
-      unary_expression primary_expression
+      unary_expression postfix_expression primary_expression array_literal
+%type <expression_list> expression_list
 %type <statement> statement global_statement
       if_statement while_statement for_statement
       return_statement break_statement continue_statement
@@ -90,7 +93,7 @@ statement_list
     ;
 expression
     : logical_or_expression
-    | IDENTIFIER ASSIGN expression
+    | postfix_expression ASSIGN expression
     {
         $$ = mrsk_create_assign_expression($1, $3);
     }
@@ -106,7 +109,7 @@ logical_or_expression
     : logical_and_expression
     | logical_or_expression LOGICAL_OR logical_and_expression
     {
-        $$ = crb_create_binary_expression(LOGICAL_OR_EXPRESSION, $1, $3);
+        $$ = mrsk_create_binary_expression(LOGICAL_OR_EXPRESSION, $1, $3);
     }
     ;
 equality_expression

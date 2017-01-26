@@ -34,6 +34,8 @@ static void increment_line_number(void)
 <INITIAL>")"            return RP;
 <INITIAL>"{"            return LC;
 <INITIAL>"}"            return RC;
+<INITIAL>"["            return LB;
+<INITIAL>"]"            return RB;
 <INITIAL>";"            return SEMICOLON;
 <INITIAL>","            return COMMA;
 <INITIAL>"and"          return LOGICAL_AND;
@@ -50,6 +52,8 @@ static void increment_line_number(void)
 <INITIAL>"*"            return MUL;
 <INITIAL>"/"            return DIV;
 <INITIAL>"%"            return MOD;
+<INITIAL>"++"           return INCREMENT;
+<INITIAL>"--"           return DECREMENT;
 <INITIAL>[a-zA-Z_][a-zA-Z_0-9]* {
     yylval.identifier = mrsk_create_identifier(yytext);
     return IDENTIFIER;
