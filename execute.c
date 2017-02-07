@@ -20,7 +20,7 @@ static StatementResult execute_expression_statement(MRSK_Interpreter *inter,
     return result;
 }
 
-static SatementResult execute_global_statement(MRSK_Interpreter *inter,
+static StatementResult execute_global_statement(MRSK_Interpreter *inter,
                                                MRSK_LocalEnvironment *env,
                                                Statement *statement)
 {
@@ -34,7 +34,7 @@ static SatementResult execute_global_statement(MRSK_Interpreter *inter,
                            GLOBAL_STATEMENT_IN_TOPLEVEL_ERR,
                            MESSAGE_ARGUMENT_END);
     }
-    for (pos=statement->u.global_s.identifier_list; pos; pos=post->next) {
+    for (pos=statement->u.global_s.identifier_list; pos; pos=pos->next) {
         GlobalVariableRef *ref_pos;
         GlobalVariableRef *new_ref;
         Variable *variable;
@@ -86,7 +86,7 @@ static StatementResult execute_elif(MRSK_Interpreter *inter,
             }
         }
     }
-FUNC_END;
+FUNC_END:
     return result;
 }
 
@@ -107,7 +107,7 @@ static StatementResult execute_if_statement(MRSK_Interpreter *inter,
     if (cond.u.boolean_value) {
         result = mrsk_execute_statement_list(inter, env,
                                              statement->u.if_s.then_block
-                                             ->statment_list);
+                                             ->statement_list);
     } else {
         MRSK_Boolean elif_executed;
         result = execute_elif(inter, env, statement->u.if_s.elif_list,
@@ -121,7 +121,7 @@ static StatementResult execute_if_statement(MRSK_Interpreter *inter,
                                                  ->statement_list);
         }
     }
-FUNC_END;
+FUNC_END:
     return result;
 }
 
@@ -165,13 +165,13 @@ static StatementResult execute_for_statement(MRSK_Interpreter *inter,
 
     result.type = NORMAL_STATEMENT_RESULT;
 
-    if (Statement->u.for_s.init) {
+    if (statement->u.for_s.init) {
         mrsk_eval_expression(inter, env, statement->u.for_s.init);
     }
     for (;;) {
         if (statement->u.for_s.condition) {
             cond = mrsk_eval_expression(inter, env,
-                                        statement->u.for_s.conditon);
+                                        statement->u.for_s.condition);
             if (cond.type != MRSK_BOOLEAN_VALUE) {
                 mrsk_runtime_error(statement->u.for_s.condition->line_number,
                                    NOT_BOOLEAN_TYPE_ERR, MESSAGE_ARGUMENT_END);
@@ -190,8 +190,8 @@ static StatementResult execute_for_statement(MRSK_Interpreter *inter,
             result.type = NORMAL_STATEMENT_RESULT;
             break;
         }
-        if (statement->u.for_s.pos) {
-            mrsk_eval_expression(inter, env, statement->u.for_s.pos);
+        if (statement->u.for_s.post) {
+            mrsk_eval_expression(inter, env, statement->u.for_s.post);
         }
     }
     return result;
@@ -232,7 +232,7 @@ static StatementResult execute_continue_statement(MRSK_Interpreter *inter,
 }
 
 static StatementResult execute_statement(MRSK_Interpreter *inter,
-                                         LocalEnvironment *env,
+                                         MRSK_LocalEnvironment *env,
                                          Statement *statement)
 {
     StatementResult result;

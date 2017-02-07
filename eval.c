@@ -6,16 +6,16 @@
 
 static void push_value(MRSK_Interpreter *inter, MRSK_Value *value)
 {
-    DBG_assert(inter->stack.statck_pointer <= inter->stack.stack_alloc_size,
+    DBG_assert(inter->stack.stack_pointer <= inter->stack.stack_alloc_size,
                ("stack_pointer..%d, stack_alloc_size..%d\n",
-                inter->stack.statck_pointer, inter->stack.stack_alloc_size));
+                inter->stack.stack_pointer, inter->stack.stack_alloc_size));
 
-    if (inter->stack.statck_pointer == inter->stack.stack_alloc_size) {
+    if (inter->stack.stack_pointer == inter->stack.stack_alloc_size) {
         inter->stack.stack_alloc_size += STACK_ALLOC_SIZE;
         inter->stack.stack = MEM_realloc(inter->stack.stack,
                                          sizeof(MRSK_Value) * inter->stack.stack_alloc_size);
     }
-    inter->stack.stack[inter->stack.statck_pointer] = *value;
+    inter->stack.stack[inter->stack.stack_pointer] = *value;
     inter->stack.stack_pointer++;
 }
 
@@ -31,12 +31,12 @@ static MRSK_Value pop_value(MRSK_Interpreter *inter)
 
 static MRSK_Value * peek_stack(MRSK_Interpreter *inter, int index)
 {
-    return &inter->stack.stack[inter->stack.statck_pointer - index - 1];
+    return &inter->stack.stack[inter->stack.stack_pointer - index - 1];
 }
 
 static void shrink_stack(MRSK_Interpreter *inter, int shrink_size)
 {
-    inter->stack.statck_pointer -= shrink_size;
+    inter->stack.stack_pointer -= shrink_size;
 }
 
 static void eval_boolean_expression(MRSK_Interpreter *inter, MRSK_Boolean boolean_value)
@@ -150,7 +150,7 @@ static MRSK_Value * get_identifier_lvalue(MRSK_Interpreter *inter, MRSK_LocalEnv
         new_var = mrsk_add_local_variable(env, identifier);
         left = new_var;
     } else {
-        new_var = MRSK_add_global_variable(inter, identifier);
+        new_var = mrsk_add_global_variable(inter, identifier);
         left = new_var;
     }
 
@@ -169,11 +169,11 @@ MRSK_Value * get_array_element_lvalue(MRSK_Interpreter *inter, MRSK_LocalEnviron
     array = pop_value(inter);
 
     if (array.type != MRSK_ARRAY_VALUE) {
-        mrsk_runtime_error(expr->line_number, INDEX_OPERAND_NONT_ARRAY_ERR,
+        mrsk_runtime_error(expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR,
                            MESSAGE_ARGUMENT_END);
     }
     if (index.type != MRSK_INT_VALUE) {
-        mrsk_runtime_error(expr->line_number, INDEX_OPERAND_NONT_INT_ERR,
+        mrsk_runtime_error(expr->line_number, INDEX_OPERAND_NOT_INT_ERR,
                            MESSAGE_ARGUMENT_END);
     }
 
@@ -193,7 +193,7 @@ MRSK_Value * get_lvalue(MRSK_Interpreter *inter, MRSK_LocalEnvironment *env,
 {
     MRSK_Value *dest;
 
-    if (expr->type == INDENTIFIER_EXPRESSION) {
+    if (expr->type == IDENTIFIER_EXPRESSION) {
         dest = get_identifier_lvalue(inter, env, expr->u.identifier);
     } else if (expr->type == INDEX_EXPRESSION) {
         dest = get_array_element_lvalue(inter, env, expr);
@@ -212,7 +212,7 @@ static void eval_assign_expression(MRSK_Interpreter *inter, MRSK_LocalEnvironmen
     MRSK_Value *dest;
 
     eval_expression(inter, env, expression);
-    src = peek_stack(inter, 0)
+    src = peek_stack(inter, 0);
 
     dest = get_lvalue(inter, env, left);
     *dest = *src;
@@ -242,7 +242,7 @@ static void eval_binary_int(MRSK_Interpreter *inter, ExpressionType operator,
                             int left, int right, MRSK_Value *result,
                             int line_number)
 {
-    if (dkb_is_math_operator(operator)) {
+    if (dkc_is_math_operator(operator)) {
         result->type = MRSK_INT_VALUE;
     } else if (dkc_is_compare_operator(operator)) {
         result->type = MRSK_BOOLEAN_VALUE;
@@ -268,7 +268,7 @@ static void eval_binary_int(MRSK_Interpreter *inter, ExpressionType operator,
             result->u.int_value = left / right; break;
         case MOD_EXPRESSION:
             result->u.int_value = left % right; break;
-        case LOGICAL_AND_EXPRESSION: //
+        case LOGICAL_AND_EXPRESSION:
         case LOGICAL_OR_EXPRESSION:
             DBG_panic(("bad case...%d", operator)); break;
         case EQ_EXPRESSION:
@@ -294,7 +294,7 @@ static void eval_binary_int(MRSK_Interpreter *inter, ExpressionType operator,
         case EXPRESSION_TYPE_COUNT_PLUS_1:
         default:
             DBG_panic(("bad case...%d", operator));
-        }
+
     }
 }
 
@@ -365,7 +365,7 @@ static MRSK_Boolean eval_compare_string(ExpressionType operator,
     MRSK_Boolean result;
     int cmp;
 
-    cmp = strcmp(left->u.string_value->string, right->u.string_value->string);
+    cmp = strcmp(left->u.object->u.string.string, right->u.object->u.string.string);
 
     if (operator == EQ_EXPRESSION) {
         result = (cmp == 0);
@@ -445,8 +445,8 @@ static void eval_binary_expression(MRSK_Interpreter *inter,
 
     eval_expression(inter, env, left);
     eval_expression(inter, env, right);
-    left_val = peek_stack(inter, 1)
-    right_val = peek_stack(inter, 0)
+    left_val = peek_stack(inter, 1);
+    right_val = peek_stack(inter, 0);
 
     if (left_val->type == MRSK_INT_VALUE
         && right_val->type == MRSK_INT_VALUE) {
@@ -594,8 +594,9 @@ static MRSK_LocalEnvironment * alloc_local_environment(MRSK_Interpreter *inter)
     ret->global_variable = NULL;
     ret->ref_in_native_method = NULL;
 
-    ret->next = inter->pop_environemnt;
+    ret->next = inter->top_environment;
     inter->top_environment = ret;
+
     return ret;
 }
 
@@ -773,7 +774,7 @@ static void eval_method_call_expression(MRSK_Interpreter *inter,
             add = peek_stack(inter, 0);
             mrsk_array_add(inter, left->u.object, *add);
             pop_value(inter);
-            result.type = MRSK_NULL_VALUE;
+            result.type = MRSK_NONE_VALUE;
         } else if (!strcmp(expr->u.method_call_expression.identifier,
                            "size")) {
             check_method_argument_count(expr->line_number,
@@ -797,7 +798,7 @@ static void eval_method_call_expression(MRSK_Interpreter *inter,
                                   MESSAGE_ARGUMENT_END);
             }
             mrsk_array_resize(inter, left->u.object, new_size.u.int_value);
-            result.type = MRSK_NULL_VALUE;
+            result.type = MRSK_NONE_VALUE;
         } else {
             error_flag = MRSK_TRUE;
         }

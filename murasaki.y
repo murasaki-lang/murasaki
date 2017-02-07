@@ -15,12 +15,12 @@
     Elif *elif;
     IdentifierList *identifier_list;
 }
-%token <expression> INI_LITERAL
+%token <expression> INT_LITERAL
 %token <expression> DOUBLE_LITERAL
 %token <expression> STRING_LITERAL
 %token <identifier> IDENTIFIER
 %token FUNCTION IF ELIF ELSE WHILE FOR RETURN_T BREAK CONTINUE NONE_T
-       LP RP LC RC SEMICOLON COMMA ASSIGN LOGICAL_AND LOGICAL_OR
+       LP RP LC RC LB RB SEMICOLON COMMA ASSIGN LOGICAL_AND LOGICAL_OR
        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T GLOBAL_T
        DOT INCREMENT DECREMENT
 %type <parameter_list> parameter_list
@@ -48,7 +48,7 @@ definition_or_statement
     | statement
     {
         MRSK_Interpreter *inter = mrsk_get_current_interpreter();
-        inter->statemtn_list = mrsk_chain_statement_list(inter->statement_list, $1);
+        inter->statement_list = mrsk_chain_statement_list(inter->statement_list, $1);
     }
     ;
 function_definition
@@ -99,7 +99,7 @@ expression
     }
     ;
 logical_and_expression
-    : equality_expresson
+    : equality_expression
     | logical_and_expression LOGICAL_AND equality_expression
     {
         $$ = mrsk_create_binary_expression(LOGICAL_AND_EXPRESSION, $1, $3);
@@ -222,7 +222,7 @@ primary_expression
     {
         $$ = mrsk_create_boolean_expression(MRSK_TRUE);
     }
-    | FALST_T
+    | FALSE_T
     {
         $$ = mrsk_create_boolean_expression(MRSK_FALSE);
     }
@@ -272,7 +272,7 @@ statement
 global_statement
     : GLOBAL_T identifier_list SEMICOLON
     {
-        $$ = mrsk_create_blobal_statement($2);
+        $$ = mrsk_create_global_statement($2);
     }
     ;
 identifier_list
@@ -343,7 +343,7 @@ break_statement
     }
     ;
 continue_statement
-    : CONTINUE SUB_EXPRESSION
+    : CONTINUE SEMICOLON
     {
         $$ = mrsk_create_continue_statement();
     }

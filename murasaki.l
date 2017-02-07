@@ -19,7 +19,7 @@ static void increment_line_number(void)
 %%
 <INITIAL>"function"     return FUNCTION;
 <INITIAL>"if"           return IF;
-<INITIAL>"else"         return ELSE:
+<INITIAL>"else"         return ELSE;
 <INITIAL>"elif"         return ELIF;
 <INITIAL>"for"          return FOR;
 <INITIAL>"while"        return WHILE;
@@ -66,7 +66,7 @@ static void increment_line_number(void)
 }
 <INITIAL>[0-9]+\.[0-9]+ {
     Expression *expression = mrsk_alloc_expression(DOUBLE_EXPRESSION);
-    sscanf(yytext, "%lf", &expressionn->u.double_value);
+    sscanf(yytext, "%lf", &expression->u.double_value);
     yylval.expression - expression;
     return DOUBLE_LITERAL;
 }
@@ -97,8 +97,8 @@ static void increment_line_number(void)
 }
 <COMMENT>. ;
 <STRING_LITERAL_STATE>\" {
-    Expression *expression = mrsk_alloc_expresion(STRING_EXPRESSION);
-    expressiono->u.string_value = mrsk_close_string_literal();
+    Expression *expression = mrsk_alloc_expression(STRING_EXPRESSION);
+    expression->u.string_value = mrsk_close_string_literal();
     yylval.expression = expression;
     BEGIN INITIAL;
     return STRING_LITERAL;
@@ -108,8 +108,8 @@ static void increment_line_number(void)
     increment_line_number();
 }
 <STRING_LITERAL_STATE>\\\"   mrsk_add_string_literal('"');
-<STRING_LITERAL_STATE>\\n    crb_add_string_literal('\n');
-<STRING_LITERAL_STATE>\\t    crb_add_string_literal('\t');
-<STRING_LITERAL_STATE>\\\\   crb_add_string_literal('\\');
-<STRING_LITERAL_STATE>.      crb_add_string_literal(yytext[0]);
+<STRING_LITERAL_STATE>\\n    mrsk_add_string_literal('\n');
+<STRING_LITERAL_STATE>\\t    mrsk_add_string_literal('\t');
+<STRING_LITERAL_STATE>\\\\   mrsk_add_string_literal('\\');
+<STRING_LITERAL_STATE>.      mrsk_add_string_literal(yytext[0]);
 %%

@@ -3,7 +3,7 @@
 #include "MRSK.h"
 
 typedef enum {
-    MRSK_FALSE = 0;
+    MRSK_FALSE = 0,
     MRSK_TRUE = 1
 } MRSK_Boolean;
 

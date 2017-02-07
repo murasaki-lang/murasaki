@@ -53,7 +53,7 @@ MRSK_Value mrsk_nv_fopen_proc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironme
     } else {
         value.type = MRSK_NATIVE_POINTER_VALUE;
         value.u.native_pointer.info = &st_native_lib_info;
-        value.u.native_pointer = fp;
+        value.u.native_pointer.pointer = fp;
     }
 
     return value;
@@ -64,7 +64,7 @@ static MRSK_Boolean check_native_pointer(MRSK_Value *value)
     return value->u.native_pointer.info == &st_native_lib_info;
 }
 
-MRSK_Value mrsk_nv_fcolse_proc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironment *env,
+MRSK_Value mrsk_nv_fclose_proc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironment *env,
                                int arg_count, MRSK_Value *args)
 {
     MRSK_Value value;
@@ -82,7 +82,7 @@ MRSK_Value mrsk_nv_fcolse_proc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironm
     return value;
 }
 
-MRSK_Value mrsk_nv_fgetsproc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironment *env,
+MRSK_Value mrsk_nv_fgets_proc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironment *env,
                              int arg_count, MRSK_Value *args)
 {
     MRSK_Value value;
@@ -93,7 +93,7 @@ MRSK_Value mrsk_nv_fgetsproc(MRSK_Interpreter *interpreter, MRSK_LocalEnvironmen
 
     check_argument_count(arg_count, 1);
 
-    if (arg[0].type != MRSK_NATIVE_POINTER_VALUE
+    if (args[0].type != MRSK_NATIVE_POINTER_VALUE
         || !check_native_pointer(&args[0])) {
         mrsk_runtime_error(0, FGETS_ARGUMENT_TYPE_ERR,
                            MESSAGE_ARGUMENT_END);
@@ -153,7 +153,7 @@ void mrsk_add_std_fp(MRSK_Interpreter *inter)
     fp_value.u.native_pointer.pointer = stdin;
     MRSK_add_global_variable(inter, "STDIN", &fp_value);
 
-    fp_valu.u.native_pointer.pointer = stdout;
+    fp_value.u.native_pointer.pointer = stdout;
     MRSK_add_global_variable(inter, "STDOUT", &fp_value);
 
     fp_value.u.native_pointer.pointer = stderr;

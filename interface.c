@@ -27,7 +27,7 @@ MRSK_Interpreter * MRSK_create_interpreter(void)
     interpreter->statement_list = NULL;
     interpreter->current_line_number = 1;
     interpreter->stack.stack_alloc_size = 0;
-    interpreter->stack.statck_pointer = 0;
+    interpreter->stack.stack_pointer = 0;
     interpreter->stack.stack = MEM_malloc(sizeof(MRSK_Value) * STACK_ALLOC_SIZE);
     interpreter->heap.current_heap_size = 0;
     interpreter->heap.current_threshold = HEAP_THRESHOLD_SIZE;
@@ -90,7 +90,7 @@ void MRSK_dispose_interpreter(MRSK_Interpreter *interpreter)
 void MRSK_add_native_function(MRSK_Interpreter *interpreter, char *name,
                               MRSK_NativeFunctionProc *proc)
 {
-    RunctionDefinition *fd;
+    FunctionDefinition *fd;
 
     fd = mrsk_malloc(sizeof(FunctionDefinition));
     fd->name = name;

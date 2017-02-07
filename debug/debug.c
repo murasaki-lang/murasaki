@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdlib.h>
+#include <limits.h>
 #include "MEM.h"
 #include "debug.h"
 
-static MRSK_Controller st_current_controller;
+static DBG_Controller st_current_controller;
 static char *st_current_file_name;
 static int st_current_line;
 static char *st_assert_expression;
 
-static struct MRSK_Controller_tag st_default_controller = {
+static struct DBG_Controller_tag st_default_controller = {
     NULL,
     INT_MAX,
 };
@@ -19,7 +19,7 @@ DBG_Controller dbg_default_controller = &st_default_controller;
 DBG_Controller DBG_create_controller_func(void)
 {
     DBG_Controller controller;
-    controller = MEM_mallor(sizeof(struct DBG_Controller_tag));
+    controller = MEM_malloc(sizeof(struct DBG_Controller_tag));
     controller->debug_write_fp = NULL;
     controller->current_debug_level = INT_MAX;
 
@@ -84,7 +84,7 @@ void DBG_panic_func(char *fmt, ...)
     initialize_debug_write_fp();
     panic_func(st_current_controller->debug_write_fp,
                st_current_file_name, st_current_line, fmt, ap);
-    painc_func(stderr, st_current_file_name, st_current_line, fmt, ap);
+    panic_func(stderr, st_current_file_name, st_current_line, fmt, ap);
     va_end(ap);
     abort();
 }
@@ -107,7 +107,7 @@ void DBG_debug_write_func(int level, char *fmt, ...)
 void DBG_set(DBG_Controller controller, char *file, int line)
 {
     st_current_controller = controller;
-    st_current_file_naem = file;
+    st_current_file_name = file;
     st_current_line = line;
 }
 

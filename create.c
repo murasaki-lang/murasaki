@@ -10,7 +10,7 @@ void mrsk_function_define(char *identifier, ParameterList *parameter_list,
 
     if (mrsk_search_function(identifier)) {
         mrsk_compile_error(FUNCTION_MULTIPLE_DEFINE_ERR,
-                           STRING_MESSAGE_ARGUMJENT, "name",
+                           STRING_MESSAGE_ARGUMENT, "name",
                            identifier, MESSAGE_ARGUMENT_END);
         return;
     }
@@ -68,7 +68,7 @@ ArgumentList * mrsk_chain_argument_list(ArgumentList *list, Expression *expr)
     return list;
 }
 
-Expression * mrsk_create_expresion_list(Expression *expression)
+ExpressionList * mrsk_create_expression_list(Expression *expression)
 {
     ExpressionList *el;
 
@@ -81,18 +81,16 @@ Expression * mrsk_create_expresion_list(Expression *expression)
 
 ExpressionList * mrsk_chain_expression_list(ExpressionList *list, Expression *expr)
 {
-    ExpresssionList *pos;
+    ExpressionList *pos;
 
     for(pos=list; pos->next; pos=pos->next) ;
-
-    pos->next = mrsk_create_expression_list(expr);
 
     return list;
 }
 
 StatementList * mrsk_create_statement_list(Statement *statement)
 {
-    Statement *sl;
+    StatementList *sl;
 
     sl = mrsk_malloc(sizeof(StatementList));
     sl->statement = statement;
@@ -128,7 +126,7 @@ Expression * mrsk_alloc_expression(ExpressionType type)
 
 Expression * mrsk_create_assign_expression(Expression *left, Expression *operand)
 {
-    Expresssion *exp;
+    Expression *exp;
 
     exp = mrsk_alloc_expression(ASSIGN_EXPRESSION);
     exp->u.assign_expression.left = left;
@@ -156,7 +154,7 @@ static Expression convert_value_to_expression(MRSK_Value *v)
     return expr;
 }
 
-Expression * mrsk_create_binary_expresssion(ExpressionType operator,
+Expression * mrsk_create_binary_expression(ExpressionType operator,
                                             Expression *left, Expression *right)
 {
     if ((left->type == INT_EXPRESSION || left->type == DOUBLE_EXPRESSION)
@@ -180,7 +178,7 @@ Expression * mrsk_create_minus_expression(Expression *operand)
     if (operand->type == INT_EXPRESSION
         || operand->type == DOUBLE_EXPRESSION) {
         MRSK_Value v;
-        v = mrsk_eval_minus_expression(mrsk_get_curent_interpreter(),
+        v = mrsk_eval_minus_expression(mrsk_get_current_interpreter(),
                                        NULL, operand);
         *operand = convert_value_to_expression(&v);
         return operand;
@@ -210,7 +208,7 @@ Expression * mrsk_create_incdec_expression(Expression *operand, ExpressionType i
     exp = mrsk_alloc_expression(inc_or_dec);
     exp->u.inc_dec.operand = operand;
 
-    return expt;
+    return exp;
 }
 
 Expression * mrsk_create_identifier_expression(char *identifier)
@@ -242,7 +240,7 @@ Expression * mrsk_create_method_call_expression(Expression *expression,
     exp = mrsk_alloc_expression(METHOD_CALL_EXPRESSION);
     exp->u.method_call_expression.expression = expression;
     exp->u.method_call_expression.identifier = method_name;
-    exp->u.method_call_expression.argument = arugment;
+    exp->u.method_call_expression.argument = argument;
 
     return exp;
 }
@@ -277,11 +275,11 @@ Expression * mrsk_create_array_expression(ExpressionList *list)
 
 static Statement * alloc_statement(StatementType type)
 {
-    statement *st;
+    Statement *st;
 
     st = mrsk_malloc(sizeof(Statement));
     st->type = type;
-    st->line_number = mrsk_get_current_interpreter()->cuttent_line_number;
+    st->line_number = mrsk_get_current_interpreter()->current_line_number;
 
     return st;
 }
@@ -327,14 +325,14 @@ Statement * mrsk_create_if_statement(Expression *condition,
 
     st = alloc_statement(IF_STATEMENT);
     st->u.if_s.condition = condition;
-    st->u.fi_s.then_block = then_block;
+    st->u.if_s.then_block = then_block;
     st->u.if_s.elif_list = elif_list;
     st->u.if_s.else_block = else_block;
 
     return st;
 }
 
-Elif * mrsk_chain_elif_list*Elif *list, Elif *add)
+Elif * mrsk_chain_elif_list(Elif *list, Elif *add)
 {
     Elif *pos;
 
@@ -345,7 +343,7 @@ Elif * mrsk_chain_elif_list*Elif *list, Elif *add)
     return list;
 }
 
-Elif * mrsk_chain_elif_list(Elif *list, Elif *add)
+Elif * mrsk_create_elif(Expression *expr, Block *block)
 {
     Elif *ei;
 
@@ -362,7 +360,7 @@ Statement * mrsk_create_while_statement(Expression *condition, Block *block)
     Statement *st;
 
     st = alloc_statement(WHILE_STATEMENT);
-    st->u.while_s.condition = condtion;
+    st->u.while_s.condition = condition;
     st->u.while_s.block = block;
 
     return st;
@@ -376,7 +374,7 @@ Statement * mrsk_create_for_statement(Expression *init, Expression *cond,
     st = alloc_statement(FOR_STATEMENT);
     st->u.for_s.init = init;
     st->u.for_s.condition = cond;
-    st->u.for_s.post = pos;
+    st->u.for_s.post = post;
     st->u.for_s.block = block;
 
     return st;
@@ -406,7 +404,7 @@ Statement * mrsk_create_return_statement(Expression *expression)
 {
     Statement *st;
 
-    st = alloc_statement(RETUREN_STATEMENT);
+    st = alloc_statement(RETURN_STATEMENT);
     st->u.return_s.return_value = expression;
 
     return st;

@@ -63,7 +63,7 @@ typedef enum {
 
 typedef struct {
     char *format;
-} MessageForamt;
+} MessageFormat;
 
 typedef struct Expression_tag Expression;
 
@@ -89,6 +89,7 @@ typedef enum {
     LOGICAL_OR_EXPRESSION,
     MINUS_EXPRESSION,
     FUNCTION_CALL_EXPRESSION,
+    METHOD_CALL_EXPRESSION,
     NONE_EXPRESSION,
     ARRAY_EXPRESSION,
     INDEX_EXPRESSION,
@@ -250,8 +251,8 @@ typedef struct ParameterList_tag {
 } ParameterList;
 
 typedef enum {
-    MURASAKI_FUNCTION_DEFINITION = 1;
-    NATIVE_FUNCTION_DEFINITION
+    MURASAKI_FUNCTION_DEFINITION = 1,
+    NATIVE_FUNCTION_DEFINITION,
     FUNCTION_DEFINITION_TYPE_COUNT_PLUS_1
 } FunctionDefinitionType;
 
@@ -304,13 +305,13 @@ typedef struct RefInNativeFunc_tag {
 struct MRSK_LocalEnvironment_tag {
     Variable *variable;
     GlobalVariableRef *global_variable;
-    RefInNativeFunc *ref_in_navive_method;
+    RefInNativeFunc *ref_in_native_method;
     struct MRSK_LocalEnvironment_tag *next;
 };
 
 typedef struct {
     int stack_alloc_size;
-    int statck_pointer;
+    int stack_pointer;
     MRSK_Value *stack;
 } Stack;
 
@@ -327,7 +328,7 @@ struct MRSK_Interpreter_tag {
     FunctionDefinition *function_list;
     StatementList *statement_list;
     int current_line_number;
-    Statck stack;
+    Stack stack;
     Heap heap;
     MRSK_LocalEnvironment *top_environment;
 };
@@ -345,7 +346,7 @@ struct MRSK_String_tag {
 
 typedef enum {
     ARRAY_OBJECT = 1,
-    STRINT_OBJECT,
+    STRING_OBJECT,
     OBJECT_TYPE_COUNT_PLUS_1
 } ObjectType;
 
