@@ -25,6 +25,7 @@ $(TARGET):$(OBJS)
 	$(CC) $(OBJS) -o $@ -lm
 clean:
 	rm -f *.o lex.yy.c y.tab.c y.tab.h *~
+
 y.tab.h : murasaki.y
 	bison --yacc -dv murasaki.y
 y.tab.c : murasaki.y
